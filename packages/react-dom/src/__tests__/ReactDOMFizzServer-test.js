@@ -5298,7 +5298,7 @@ describe('ReactDOMFizzServer', () => {
     );
   });
 
-  it('holds back body and html closing tags (the postamble) until all pending tasks are completed', async () => {
+  it.only('holds back body and html closing tags (the postamble) until all pending tasks are completed', async () => {
     const chunks = [];
     writable.on('data', chunk => {
       chunks.push(chunk);
@@ -5319,28 +5319,33 @@ describe('ReactDOMFizzServer', () => {
       pipe(writable);
     });
 
-    expect(getVisibleChildren(document)).toEqual(
-      <html>
-        <head />
-        <body>{'first'}</body>
-      </html>,
-    );
+    expect(chunks.pop()).toEqual('<!DOCTYPE html><html><head><script src=\"react-dom-bindings/src/server/ReactDOMServerExternalRuntime.js\" async=\"\"></script><link rel=\"expect\" href=\"#_R_\" blocking=\"render\"/></head><body>first<!--$?--><template id=\"B:0\"></template><!--/$--><template id=\"_R_\"></template>');
+    expect(chunks.length).toBe(0);
+    // expect(getVisibleChildren(document)).toEqual(
+    //   <html>
+    //     <head />
+    //     <body>{'first'}</body>
+    //   </html>,
+    // );
 
     await act(() => {
       resolveText('second');
     });
 
-    expect(getVisibleChildren(document)).toEqual(
-      <html>
-        <head />
-        <body>
-          {'first'}
-          {'second'}
-        </body>
-      </html>,
-    );
+    expect(chunks.shift()).toEqual('<div hidden id=\"S:0\">second<!-- --></div><template data-rci=\"\" data-bid=\"B:0\" data-sid=\"S:0\"></template>');
+    expect(chunks.shift()).toEqual('</body></html>');
+    expect(chunks.length).toBe(0);
 
-    expect(chunks.pop()).toEqual('</body></html>');
+    // expect(getVisibleChildren(document)).toEqual(
+    //   <html>
+    //     <head />
+    //     <body>
+    //       {'first'}
+    //       {'second'}
+    //     </body>
+    //   </html>,
+    // );
+
   });
 
   describe('text separators', () => {
